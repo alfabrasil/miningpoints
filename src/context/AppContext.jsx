@@ -127,22 +127,13 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Mensagem de Boas-vindas
-  useEffect(() => {
-    if (state.notifications.length === 0) {
-        addNotification("Bem-vindo ao MiningPoints! Se precisar de ajuda, acesse o Suporte.", "support");
-    }
-  }, []);
-
-  // Sincroniza ciclos pendentes quando o app abre (simula 15m contínuos via localStorage)
-  useEffect(() => {
+  const syncMiningFromMeta = () => {
     try {
       const raw = localStorage.getItem(MINING_META_KEY);
       if (!raw) {
-        localStorage.setItem(
-          MINING_META_KEY,
-          JSON.stringify({ timer: 900, lastUpdate: new Date().toISOString() })
-        );
+        const initialMeta = { timer: 900, lastUpdate: new Date().toISOString() };
+        localStorage.setItem(MINING_META_KEY, JSON.stringify(initialMeta));
+        setMiningTimer(900);
         return;
       }
 
@@ -182,15 +173,33 @@ export const AppProvider = ({ children }) => {
         JSON.stringify({ timer, lastUpdate: new Date().toISOString() })
       );
     } catch {
-      localStorage.setItem(
-        MINING_META_KEY,
-        JSON.stringify({ timer: 900, lastUpdate: new Date().toISOString() })
-      );
+      const resetMeta = { timer: 900, lastUpdate: new Date().toISOString() };
+      localStorage.setItem(MINING_META_KEY, JSON.stringify(resetMeta));
       setMiningTimer(900);
+    }
+  };
+
+  useEffect(() => {
+    if (state.notifications.length === 0) {
+        addNotification("Bem-vindo ao MiningPoints! Se precisar de ajuda, acesse o Suporte.", "support");
     }
   }, []);
 
-  // Lógica do Simulador de Mineração (intervalo contínuo, alinhado ao meta no localStorage)
+  useEffect(() => {
+    syncMiningFromMeta();
+  }, []);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        syncMiningFromMeta();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
   useEffect(() => {
     const timerId = setInterval(() => {
       setMiningTimer(prev => {
