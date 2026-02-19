@@ -128,7 +128,7 @@ export const WalletView = ({ navigate }) => {
         </div>
         <div className="bg-gradient-to-br from-gray-900 to-black p-4 rounded-xl border border-[#ff00ff]">
           <p className="text-xs text-pink-200 mb-1">{t('wallet.balance_mph')}</p>
-          <h2 className="text-2xl font-bold text-[#ff00ff]">{state.wallet.mph}</h2>
+          <h2 className="text-2xl font-bold text-[#ff00ff]">{state.wallet.mph.toFixed(2)}</h2>
         </div>
       </div>
 
