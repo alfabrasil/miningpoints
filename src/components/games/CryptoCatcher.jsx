@@ -28,8 +28,8 @@ export const CryptoCatcherGame = ({ onGameOver, onExit }) => {
         
         const resizeCanvas = () => {
             canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = 420;
-            // Center basket initially
+            const parentH = canvas.parentElement.clientHeight;
+            canvas.height = Math.max(320, Math.floor(parentH * 0.7));
             gameData.current.basket.y = canvas.height - 50;
             gameData.current.basket.x = (canvas.width - gameData.current.basket.w) / 2;
         };
@@ -291,7 +291,7 @@ export const CryptoCatcherGame = ({ onGameOver, onExit }) => {
 
                 {/* GAME CANVAS */}
                 <div 
-                    className="w-full h-[420px] relative cursor-pointer touch-none" 
+                    className="w-full h-[70vh] max-h-[640px] min-h-[420px] relative cursor-pointer touch-none" 
                     onMouseMove={(e) => handleMove(e.clientX)}
                     onTouchMove={(e) => handleMove(e.touches[0].clientX)}
                 >

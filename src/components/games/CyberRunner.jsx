@@ -32,7 +32,8 @@ export const CyberRunnerGame = ({ onGameOver, onExit }) => {
         // Responsive Canvas
         const resizeCanvas = () => {
             canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = 300; // Fixed height for game consistency
+            const parentH = canvas.parentElement.clientHeight;
+            canvas.height = Math.max(300, Math.floor(parentH * 0.7));
             gameData.current.player.y = canvas.height - 50; // Reset player pos
         };
         window.addEventListener('resize', resizeCanvas);
@@ -346,9 +347,8 @@ export const CyberRunnerGame = ({ onGameOver, onExit }) => {
                     </div>
                 </div>
 
-                {/* GAME CANVAS */}
                 <div 
-                    className="w-full h-[420px] relative cursor-pointer" 
+                    className="w-full h-[70vh] max-h-[640px] min-h-[420px] relative cursor-pointer" 
                     onClick={handleJump} 
                     onTouchStart={handleJump}
                 >
