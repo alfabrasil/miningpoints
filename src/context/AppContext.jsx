@@ -201,6 +201,17 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key === MINING_META_KEY) {
+        syncMiningFromMeta();
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  useEffect(() => {
     const timerId = setInterval(() => {
       setMiningTimer(prev => {
         let next = prev;
