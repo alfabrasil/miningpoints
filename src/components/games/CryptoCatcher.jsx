@@ -14,8 +14,8 @@ export const CryptoCatcherGame = ({ onGameOver, onExit }) => {
     
     // Game State Ref
     const gameData = useRef({
-        basket: { x: 150, y: 0, w: 60, h: 40, color: '#9333ea' },
-        items: [], // { x, y, type: 'btc'|'usd'|'bomb'|'rock', speed, r }
+        basket: { x: 150, y: 0, w: 52, h: 40, color: '#9333ea' },
+        items: [],
         frameCount: 0,
         score: 0,
         active: false,
@@ -92,21 +92,20 @@ export const CryptoCatcherGame = ({ onGameOver, onExit }) => {
         ctx.fillRect(b.x, b.y, b.w, 5);
 
         // --- SPAWN ITEMS ---
-        // Difficulty increases with time
-        const spawnRate = Math.max(20, 60 - Math.floor((120 - timeLeft) / 3)); // Faster over time
+        const spawnRate = Math.max(15, 45 - Math.floor((120 - timeLeft) / 3));
         
         if (state.frameCount - state.lastSpawn > spawnRate) {
             const rand = Math.random();
             let type = 'rock';
-            if (rand < 0.4) type = 'btc';
-            else if (rand < 0.7) type = 'usd';
-            else if (rand < 0.9) type = 'bomb';
+            if (rand < 0.35) type = 'btc';
+            else if (rand < 0.6) type = 'usd';
+            else if (rand < 0.95) type = 'bomb';
             
             state.items.push({
                 x: Math.random() * (canvas.width - 30) + 15,
                 y: -30,
                 type,
-                speed: 3 + Math.random() * 3 + ((120 - timeLeft) / 60), // Speed up
+                speed: 3.5 + Math.random() * 3 + ((120 - timeLeft) / 40),
                 r: 15,
                 angle: 0
             });
@@ -152,16 +151,15 @@ export const CryptoCatcherGame = ({ onGameOver, onExit }) => {
 
             if (hitBasket) {
                 if (item.type === 'btc') {
-                    state.score += 50;
+                    state.score += 5;
                     if(audioEnabled) SoundManager.playCoin();
                 } else if (item.type === 'usd') {
-                    state.score += 10;
+                    state.score += 5;
                     if(audioEnabled) SoundManager.playCoin();
                 } else if (item.type === 'bomb') {
                     handleLifeLost();
                 } else {
-                    // Rock - negative score or just blocking? Let's minus score
-                    state.score = Math.max(0, state.score - 5);
+                    state.score = Math.max(0, state.score - 10);
                     if(audioEnabled) SoundManager.playTone(100, 'sawtooth', 0.1);
                 }
                 setScore(state.score);
@@ -291,7 +289,7 @@ export const CryptoCatcherGame = ({ onGameOver, onExit }) => {
 
                 {/* GAME CANVAS */}
                 <div 
-                    className="w-full h-[70vh] max-h-[640px] min-h-[420px] relative cursor-pointer touch-none" 
+                    className="w-full h-[40vh] max-h-[384px] min-h-[320px] relative cursor-pointer touch-none" 
                     onMouseMove={(e) => handleMove(e.clientX)}
                     onTouchMove={(e) => handleMove(e.touches[0].clientX)}
                 >
