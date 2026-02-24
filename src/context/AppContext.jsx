@@ -229,7 +229,9 @@ export const AppProvider = ({ children }) => {
         );
 
         const elapsedInCycle = 900 - next;
-        const phase = elapsedInCycle % 15;
+        const cycleDuration = 60; // 5s + 5s + 50s
+        const phase = elapsedInCycle % cycleDuration;
+        
         if (phase < 5) setMiningStatus('searching');
         else if (phase < 10) setMiningStatus('analyzing');
         else setMiningStatus('executing');
@@ -334,6 +336,15 @@ export const AppProvider = ({ children }) => {
     return true;
   };
 
+  const resetAppData = () => {
+    if (window.confirm('Tem certeza? Isso apagará TODO o progresso e saldo da aplicação.')) {
+        localStorage.removeItem('mining_points_mvp_v1');
+        localStorage.removeItem(MINING_META_KEY);
+        setState(INITIAL_STATE);
+        window.location.reload();
+    }
+  };
+
   const changeLanguage = (lang) => {
     setState(prev => ({ ...prev, user: { ...prev.user, language: lang } }));
     addNotification(`Idioma alterado para: ${AVAILABLE_LANGUAGES.find(l => l.code === lang)?.name}`, 'success');
@@ -352,7 +363,7 @@ export const AppProvider = ({ children }) => {
     <AppContext.Provider value={{ 
       state, setState, miningTimer, miningStatus, 
       addNotification, updateWallet, addPlan, changeLanguage, popup,
-      markAllNotificationsRead, clearNotifications, addGameResult, consumeDailyCredit, buyCredits, t
+      markAllNotificationsRead, clearNotifications, addGameResult, consumeDailyCredit, buyCredits, t, resetAppData
     }}>
       {children}
     </AppContext.Provider>

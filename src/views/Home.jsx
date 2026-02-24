@@ -5,6 +5,7 @@ import { THEME } from '../utils/theme';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Ticker } from '../components/Ticker';
+import { MiningCluster } from '../components/MiningCluster';
 
 export const HomeView = ({ navigate }) => {
   const { state, miningTimer, miningStatus, t } = useContext(AppContext);
@@ -55,30 +56,29 @@ export const HomeView = ({ navigate }) => {
             </div>
           </div>
 
-          <div className="h-32 bg-black rounded-lg border border-gray-800 p-2 relative mb-4 font-mono text-xs overflow-hidden">
-            <div className="absolute top-2 right-2 flex gap-1">
-              <div className={`w-2 h-2 rounded-full ${miningStatus === 'searching' ? 'bg-yellow-500 animate-ping' : 'bg-gray-700'}`}></div>
-              <div className={`w-2 h-2 rounded-full ${miningStatus === 'analyzing' ? 'bg-blue-500 animate-ping' : 'bg-gray-700'}`}></div>
-              <div className={`w-2 h-2 rounded-full ${miningStatus === 'executing' ? 'bg-green-500 animate-ping' : 'bg-gray-700'}`}></div>
+          <div className="bg-black rounded-lg border border-gray-800 p-3 relative mb-4 font-mono text-xs overflow-hidden transition-all duration-300">
+            <div className="absolute top-3 right-3 flex gap-1.5 z-20">
+              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${miningStatus === 'searching' ? 'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.8)]' : 'bg-gray-800'}`}></div>
+              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${miningStatus === 'analyzing' ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]' : 'bg-gray-800'}`}></div>
+              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${miningStatus === 'executing' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]' : 'bg-gray-800'}`}></div>
             </div>
             
-            <div className="space-y-1 text-gray-400">
+            <div className="space-y-1 text-gray-400 mb-4 relative z-10 min-h-[60px]">
               <p>{t('home.start_protocol')}</p>
-              {miningStatus === 'searching' && <p className="text-yellow-400">{t('home.searching')}</p>}
-              {miningStatus === 'analyzing' && <p className="text-blue-400">{t('home.analyzing')}</p>}
+              {miningStatus === 'searching' && <p className="text-yellow-400 animate-pulse">{t('home.searching')}</p>}
+              {miningStatus === 'analyzing' && <p className="text-blue-400 animate-pulse">{t('home.analyzing')}</p>}
               {miningStatus === 'executing' && (
                 <>
                   <p className="text-green-400">{t('home.executing1')}</p>
                   <p className="text-green-400">{t('home.executing2')}</p>
                 </>
               )}
-              <div className="mt-2 grid grid-cols-3 gap-1">
-                {[1,2,3].map(i => (
-                  <div key={i} className={`h-8 border border-gray-700 rounded flex items-center justify-center ${miningStatus === 'executing' ? 'bg-green-900/30 border-green-500' : ''}`}>
-                    <Activity size={12} className={miningStatus === 'executing' ? 'animate-bounce text-green-400' : 'text-gray-600'} />
-                  </div>
-                ))}
-              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 relative z-10">
+              {[1,2,3].map(i => (
+                <MiningCluster key={i} index={i} status={miningStatus} />
+              ))}
             </div>
           </div>
 

@@ -10,7 +10,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 
 export const MenuView = ({ navigate, initialTab = 'menu' }) => {
-    const { state, setState, addNotification, changeLanguage, t } = useContext(AppContext);
+    const { state, setState, addNotification, changeLanguage, t, resetAppData } = useContext(AppContext);
     const [subTab, setSubTab] = useState(initialTab);
     const [newUsername, setNewUsername] = useState('');
     const [usernameToken, setUsernameToken] = useState('');
@@ -93,6 +93,18 @@ export const MenuView = ({ navigate, initialTab = 'menu' }) => {
                     <Card><h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><Edit3 size={16} className="text-purple-400"/> Alterar Username</h4><div className="space-y-2"><input type="text" placeholder="Novo Username" className="w-full bg-black border border-gray-700 rounded p-2 text-xs text-white" value={newUsername} onChange={(e) => setNewUsername(e.target.value)}/><div className="flex gap-2"><input type="text" placeholder="Token (Enviado ao e-mail)" className="flex-1 bg-black border border-gray-700 rounded p-2 text-xs text-white" value={usernameToken} onChange={(e) => setUsernameToken(e.target.value)}/><button onClick={() => addNotification('Token enviado para ' + state.user.email, 'success')} className="bg-gray-800 text-xs px-3 rounded text-gray-300 whitespace-nowrap">Pedir Token</button></div><Button onClick={handleSaveUsername} className="w-full text-xs py-2 mt-2">Atualizar Username</Button></div></Card>
                     <Card><h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><Key size={16} className="text-yellow-400"/> Senha Financeira</h4><input type="password" placeholder="Nova Senha de Transação" className="w-full bg-black border border-gray-700 rounded p-2 text-xs text-white mb-2" value={financialPwd} onChange={(e) => setFinancialPwd(e.target.value)}/><Button onClick={handleSaveFinancialPwd} className="w-full text-xs py-2">Definir Senha</Button></Card>
                     <Card className="border-green-900"><h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2"><Wallet size={16} className="text-green-400"/> Carteiras de Saque</h4><div className="space-y-3">{[{ k: 'usdt_bep20', l: 'USDT (BEP-20)' },{ k: 'usdt_polygon', l: 'USDT (Polygon)' },{ k: 'usdt_trc20', l: 'USDT (TRC-20)' },{ k: 'usdt_arbitrum', l: 'USDT (Arbitrum)' },{ k: 'usdc_arbitrum', l: 'USDC (Arbitrum)' },{ k: 'pix', l: 'Chave PIX' }].map((w) => (<div key={w.k}><label className="text-[10px] text-gray-500 uppercase">{w.l}</label><input type="text" placeholder={`Endereço ${w.l}`} className="w-full bg-black border border-gray-700 rounded p-2 text-xs text-white focus:border-green-500 transition-colors" value={wallets[w.k]} onChange={(e) => setWallets({...wallets, [w.k]: e.target.value})}/></div>))}<div className="bg-yellow-900/20 p-3 rounded border border-yellow-900/50 mt-4"><div className="flex items-start gap-2 mb-2"><AlertTriangle size={16} className="text-yellow-500 shrink-0 mt-0.5"/><p className="text-[10px] text-yellow-200 leading-tight">Para salvar alterações nas carteiras, é necessário um token de segurança enviado pelo suporte.</p></div><div className="flex gap-2"><input type="text" placeholder="Token de Segurança" className="flex-1 bg-black border border-yellow-700 rounded p-2 text-xs text-white" value={walletToken} onChange={(e) => setWalletToken(e.target.value)}/><button onClick={() => addNotification('Token de segurança enviado!', 'success')} className="bg-yellow-700 text-black font-bold text-xs px-3 rounded hover:bg-yellow-600 whitespace-nowrap">Solicitar</button></div></div><Button onClick={handleSaveWallets} variant="success" className="w-full text-xs py-3 flex items-center justify-center gap-2"><Save size={16}/> SALVAR CARTEIRAS</Button></div></Card>
+                    
+                    <Card className="border-red-900 bg-red-900/10">
+                        <h4 className="text-sm font-bold text-red-400 mb-2 flex items-center gap-2">
+                            <AlertTriangle size={16} /> Zona de Perigo
+                        </h4>
+                        <p className="text-[10px] text-red-300 mb-3">
+                            Esta ação irá apagar todos os dados, saldo e progresso da conta localmente. Use para reiniciar testes.
+                        </p>
+                        <Button onClick={resetAppData} className="w-full text-xs py-2 bg-red-600 hover:bg-red-700 text-white border-red-500">
+                            RESETAR DADOS DA APLICAÇÃO
+                        </Button>
+                    </Card>
                  </div>
             </div>
         )
