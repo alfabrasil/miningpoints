@@ -89,7 +89,7 @@ export const WalletView = ({ navigate }) => {
     if (mode === 'swap') {
         if (swapDir === 'usd_to_mph') {
             if (state.wallet.usd < val) return alert("Saldo insuficiente em USD");
-            const mphAmount = val * 1000;
+            const mphAmount = val * 100;
             setState(prev => ({
                 ...prev,
                 wallet: {
@@ -103,7 +103,12 @@ export const WalletView = ({ navigate }) => {
             // mph_to_usd
             const mphVal = val; // input em MPH
             if (state.wallet.mph < mphVal) return alert("Saldo insuficiente em MPH");
-            const usdCredit = mphVal / 1000;
+            
+            // Burn 2%
+            const burnAmount = mphVal * 0.02;
+            const netMph = mphVal - burnAmount;
+            const usdCredit = netMph / 100;
+
             setState(prev => ({
                 ...prev,
                 wallet: {
@@ -112,7 +117,7 @@ export const WalletView = ({ navigate }) => {
                     usd: prev.wallet.usd + usdCredit
                 }
             }));
-            addNotification(`Swap MPH -> USDT: -${mphVal} MPH / +$${usdCredit.toFixed(2)}`, 'swap');
+            addNotification(`Swap MPH -> USDT: -${mphVal} MPH / +$${usdCredit.toFixed(2)} (Burn: -${burnAmount.toFixed(0)} MPH)`, 'swap');
         }
         setMode('main');
     }
@@ -208,9 +213,12 @@ export const WalletView = ({ navigate }) => {
                   {t('wallet.swap_rate_prefix')} 
                   {(() => {
                     const v = Math.max(0, parseFloat(inputValue || '0') || 0);
-                    return swapDir === 'usd_to_mph' 
-                      ? ` +${(v * 1000).toFixed(0)} MPH` 
-                      : ` +$${(v / 1000).toFixed(2)}`;
+                    if (swapDir === 'mph_to_usd') {
+                        const burn = v * 0.02;
+                        const net = v - burn;
+                        return ` +$${(net / 100).toFixed(2)} (Burn: -${burn.toFixed(0)} MPH)`;
+                    }
+                    return ` +${(v * 100).toFixed(0)} MPH`;
                   })()}
                 </div>
               </div>

@@ -43,7 +43,7 @@ export default {
     confirm_swap: "CONFIRM SWAP",
     swap_usd_to_mph: "USD → MPH",
     swap_mph_to_usd: "MPH → USD",
-    swap_rate_prefix: "Fixed rate: $1 = 1000 MPH • Conversion:",
+    swap_rate_prefix: "Fixed rate: $1 = 100 MPH • Conversion:",
     transfer_username: "Destination username",
     transfer_user_email: "E-mail:",
     withdraw_method: "Withdraw Method",

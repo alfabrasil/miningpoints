@@ -297,17 +297,19 @@ export const AppProvider = ({ children }) => {
       }
   };
 
-  const addGameResult = (gameName, mphEarned) => {
+  const addGameResult = (gameName, historyAmount, walletAmount = null) => {
+      const amountToAdd = walletAmount !== null ? walletAmount : historyAmount;
+      
       const newEntry = {
           id: Date.now(),
           game: gameName,
-          amount: mphEarned,
+          amount: historyAmount,
           time: new Date().toISOString()
       };
       
       setState(prev => ({
           ...prev,
-          wallet: { ...prev.wallet, mph: prev.wallet.mph + mphEarned },
+          wallet: { ...prev.wallet, mph: prev.wallet.mph + amountToAdd },
           gameHistory: [newEntry, ...prev.gameHistory].slice(0, 20) // Guarda os últimos 20 jogos
       }));
   };

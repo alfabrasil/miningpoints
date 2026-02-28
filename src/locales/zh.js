@@ -43,7 +43,7 @@ export default {
     confirm_swap: "确认兑换",
     swap_usd_to_mph: "USD → MPH",
     swap_mph_to_usd: "MPH → USD",
-    swap_rate_prefix: "固定汇率：1 美元 = 1000 MPH • 汇率：",
+    swap_rate_prefix: "固定汇率：1 美元 = 100 MPH • 汇率：",
     transfer_username: "收款用户名",
     transfer_user_email: "电子邮箱：",
     withdraw_method: "提现方式",
