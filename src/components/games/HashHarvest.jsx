@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Cpu, Zap, Battery, Shield, Trophy, Timer } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
+import { SoundManager } from '../../utils/soundManager';
 
 const GRID_SIZE = 6;
 const GAME_DURATION = 60; // segundos
@@ -35,27 +36,9 @@ export const HashHarvestGame = React.memo(({ onGameOver, betAmount, playerChar, 
     const [botPos, setBotPos] = useState({ x: GRID_SIZE - 1, y: GRID_SIZE - 1 });
     const [botFlip, setBotFlip] = useState(true); // bot começa na direita olhando pra esquerda
 
-    // Sons otimizados
-    const punchSoundRef = useRef(new Audio('https://www.myinstants.com/media/sounds/roblox-punch-sound.mp3')); // Som de soco mais "seco" e rápido
-    
-    // BGM agora é gerenciado pelo ArcadeView para compatibilidade com iOS (autoplay policy)
-
-    useEffect(() => {
-        // Preload SFX
-        punchSoundRef.current.load();
-        punchSoundRef.current.volume = 1.0;
-    }, []);
-
     const playPunchSound = () => {
         if (isMuted) return;
-        try {
-            // Clona o áudio para permitir sons sobrepostos rápidos
-            const sound = punchSoundRef.current.cloneNode();
-            sound.volume = 0.8;
-            sound.play().catch(e => console.warn("Audio play failed", e));
-        } catch (e) {
-            console.warn("Audio error", e);
-        }
+        SoundManager.playSfx('punch');
     };
 
     const triggerHitEffect = (target) => {

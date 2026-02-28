@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { CyberRunnerGame } from '../components/games/CyberRunner';
 import { CryptoCatcherGame } from '../components/games/CryptoCatcher';
 import { HashHarvestGame } from '../components/games/HashHarvest';
+import { SoundManager } from '../utils/soundManager';
 
 export const ArcadeView = () => {
     const [tab, setTab] = useState('daily'); // 'daily', 'pvp'
@@ -19,17 +20,11 @@ export const ArcadeView = () => {
     const [isMuted, setIsMuted] = useState(false); // Estado de Mute
     const { state, setState, addNotification, addGameResult, consumeDailyCredit, buyCredits, t } = useContext(AppContext);
     
-    // Áudio BGM (Hoisted para ArcadeView para compatibilidade iOS)
-    const battleBgm = React.useRef(new Audio('https://cdn.pixabay.com/audio/2021/09/06/audio_4474771566.mp3'));
-    const victorySound = React.useRef(new Audio('https://www.myinstants.com/media/sounds/final-fantasy-v-music-victory-fanfare.mp3'));
-    const defeatSound = React.useRef(new Audio('https://www.myinstants.com/media/sounds/game-over-arcade.mp3'));
-
+    // Áudio BGM (Gerenciado pelo SoundManager)
     React.useEffect(() => {
-        battleBgm.current.loop = true;
-        battleBgm.current.volume = 0.2;
+        // Limpa áudio ao desmontar
         return () => {
-            battleBgm.current.pause();
-            battleBgm.current.currentTime = 0;
+            SoundManager.stopMusic();
         };
     }, []);
 
@@ -37,9 +32,9 @@ export const ArcadeView = () => {
         setIsMuted(prev => {
             const newState = !prev;
             if (newState) {
-                battleBgm.current.pause();
+                SoundManager.stopMusic();
             } else if (pvpState === 'playing') {
-                battleBgm.current.play().catch(e => console.warn(e));
+                SoundManager.startMusic();
             }
             return newState;
         });
@@ -47,39 +42,21 @@ export const ArcadeView = () => {
 
     const startBgm = () => {
         if (!isMuted) {
-            battleBgm.current.play().catch(e => console.warn("Audio autoplay blocked", e));
+            SoundManager.startMusic();
         }
-        
-        // "Bless" Victory/Defeat sounds (Play 0 volume then pause) to unlock iOS audio context
-        victorySound.current.volume = 0;
-        victorySound.current.play().then(() => {
-            victorySound.current.pause();
-            victorySound.current.currentTime = 0;
-            victorySound.current.volume = 0.4;
-        }).catch(e => console.warn("Victory sound bless failed", e));
-
-        defeatSound.current.volume = 0;
-        defeatSound.current.play().then(() => {
-            defeatSound.current.pause();
-            defeatSound.current.currentTime = 0;
-            defeatSound.current.volume = 0.4;
-        }).catch(e => console.warn("Defeat sound bless failed", e));
     };
 
     const stopBgm = () => {
-        battleBgm.current.pause();
-        battleBgm.current.currentTime = 0;
+        SoundManager.stopMusic();
     };
 
     const playResultSound = (outcome) => {
         if (isMuted) return;
 
         if (outcome === 'win') {
-            victorySound.current.currentTime = 0;
-            victorySound.current.play().catch(e => console.warn(e));
+            SoundManager.playSfx('victory');
         } else if (outcome === 'loss') {
-            defeatSound.current.currentTime = 0;
-            defeatSound.current.play().catch(e => console.warn(e));
+            SoundManager.playSfx('defeat');
         }
     };
 
@@ -128,7 +105,7 @@ export const ArcadeView = () => {
 
     const handleCreateGame = () => {
         if (state.wallet.mph < pvpConfig.bet) {
-            addNotification('Saldo MPH insuficiente para a aposta.', 'danger');
+            addNotification(t('arcade.insufficientFunds'), 'danger');
             return;
         }
 
@@ -157,7 +134,7 @@ export const ArcadeView = () => {
     };
 
     const handleCancelGame = () => {
-        if (window.confirm('Cancelar partida e receber reembolso?')) {
+        if (window.confirm(t('arcade.cancelConfirm'))) {
             stopBgm(); // Stop BGM on cancel
 
             // Remove do Book
@@ -183,7 +160,7 @@ export const ArcadeView = () => {
                 
                 // Simula entrada de oponente aleatoriamente
                 if (Math.random() > 0.95) { 
-                    addNotification('Um oponente aceitou seu desafio!', 'success');
+                    addNotification(t('arcade.opponentFound'), 'success');
                     // Remove do book ao iniciar
                     if (pvpConfig.gameId) {
                         setOpenGames(prev => prev.filter(g => g.id !== pvpConfig.gameId));
@@ -193,7 +170,7 @@ export const ArcadeView = () => {
             }, 1000);
         } else if (pvpState === 'waiting_room' && waitingTimer === 0) {
             // Timeout - Ninguém entrou
-            addNotification('Nenhum jogador humano encontrado. Iniciando contra BOT do sistema...', 'info');
+            addNotification(t('arcade.noHumanFound'), 'info');
             // Remove do book ao iniciar contra bot
             if (pvpConfig.gameId) {
                 setOpenGames(prev => prev.filter(g => g.id !== pvpConfig.gameId));
@@ -205,7 +182,7 @@ export const ArcadeView = () => {
 
     const handleJoinGame = (gameId, betAmount) => {
         if (state.wallet.mph < betAmount) {
-            addNotification('Saldo insuficiente para aceitar este desafio.', 'danger');
+            addNotification(t('arcade.insufficientToJoin'), 'danger');
             return;
         }
         
@@ -220,7 +197,7 @@ export const ArcadeView = () => {
             wallet: { ...prev.wallet, mph: prev.wallet.mph - betAmount }
         }));
 
-        addNotification('Desafio aceito! Preparando arena...', 'success');
+        addNotification(t('arcade.challengeAccepted'), 'success');
         setTimeout(() => setPvpState('playing'), 1000);
     };
 
@@ -264,7 +241,7 @@ export const ArcadeView = () => {
     const handleShareLink = () => {
         const link = `${window.location.origin}/pvp/join/${pvpConfig.gameId || 'invite'}`;
         navigator.clipboard.writeText(link);
-        addNotification('Link de convite copiado!', 'success');
+        addNotification(t('arcade.linkCopied'), 'success');
     };
 
     return (
@@ -282,13 +259,13 @@ export const ArcadeView = () => {
                     onClick={() => setTab('daily')}
                     className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${tab === 'daily' ? 'bg-gray-800 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
                 >
-                    JOGOS DIÁRIOS (FREE)
+                    {t('arcade.dailyGames')}
                 </button>
                 <button 
                     onClick={() => setTab('pvp')}
                     className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${tab === 'pvp' ? 'bg-purple-600 text-white shadow' : 'text-purple-400 hover:text-purple-300'}`}
                 >
-                    <Swords size={14} /> PVP ARENA (BET)
+                    <Swords size={14} /> {t('arcade.pvpArena')}
                 </button>
             </div>
             
@@ -383,6 +360,7 @@ export const ArcadeView = () => {
                             userBalance={state.wallet?.mph || 0}
                             isSearching={isSearching}
                             openGames={openGames}
+                            t={t}
                         />
                     )}
                     
@@ -393,11 +371,11 @@ export const ArcadeView = () => {
                                     <div className="absolute inset-0 bg-purple-500 rounded-full blur-xl animate-pulse opacity-50"></div>
                                     <img src={`/assets/persona/${pvpConfig.char}.svg`} alt="You" className="w-32 h-32 relative z-10 drop-shadow-lg" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-2 animate-pulse">Aguardando Desafiante...</h3>
-                                <p className="text-gray-400 mb-6">Sua aposta: <span className="text-green-400 font-mono font-bold">{pvpConfig.bet} MPH</span></p>
+                                <h3 className="text-2xl font-bold text-white mb-2 animate-pulse">{t('arcade.waitingChallenger')}</h3>
+                                <p className="text-gray-400 mb-6">{t('arcade.yourBet')} <span className="text-green-400 font-mono font-bold">{pvpConfig.bet} MPH</span></p>
                                 
                                 <div className="bg-gray-800 p-4 rounded-xl mb-6 border border-gray-700">
-                                    <p className="text-xs text-gray-400 mb-2">COMPARTILHAR LINK DA SALA</p>
+                                    <p className="text-xs text-gray-400 mb-2">{t('arcade.shareLink')}</p>
                                     <div className="flex gap-2">
                                         <div className="bg-black/50 p-2 rounded text-xs text-gray-300 font-mono flex-1 truncate border border-gray-600">
                                             {`${window.location.origin}/pvp/join/${pvpConfig.gameId || '...'}`}
@@ -413,11 +391,11 @@ export const ArcadeView = () => {
                                 </div>
 
                                 <p className="text-xs text-gray-500 mb-8 max-w-xs mx-auto">
-                                    Sua sala está visível no Book de Ofertas. Se ninguém entrar, você jogará contra o Bot.
+                                    {t('arcade.visibleInBook')}
                                 </p>
 
                                 <Button onClick={handleCancelGame} variant="outline" className="border-red-500 text-red-500 hover:bg-red-500/10 w-full">
-                                    CANCELAR E REEMBOLSAR
+                                    {t('arcade.cancelRefund')}
                                 </Button>
                             </div>
                         </div>
@@ -425,7 +403,7 @@ export const ArcadeView = () => {
                     
                     {pvpState === 'playing' && (
                         <div className="fixed inset-0 z-50 bg-black flex flex-col p-4">
-                            <Button onClick={() => { if(window.confirm('Sair da partida? Você perderá sua aposta.')) setPvpState('lobby'); }} className="absolute top-4 right-4 z-50 bg-red-600/80 p-2 rounded-full w-auto h-auto"><X size={20}/></Button>
+                            <Button onClick={() => { if(window.confirm(t('arcade.exitConfirm'))) setPvpState('lobby'); }} className="absolute top-4 right-4 z-50 bg-red-600/80 p-2 rounded-full w-auto h-auto"><X size={20}/></Button>
                             <div className="flex-1 flex items-center justify-center">
                                 <HashHarvestGame 
                                     onGameOver={handlePvpGameOver}
@@ -442,7 +420,8 @@ export const ArcadeView = () => {
                         <PvpResult 
                             pvpResult={pvpResult} 
                             onLobby={() => setPvpState('lobby')} 
-                            onRematch={handleCreateGame} 
+                            onRematch={handleCreateGame}
+                            t={t}
                         />
                     )}
                 </>
@@ -500,15 +479,9 @@ export const ArcadeView = () => {
     );
 };
 
-const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSearching, openGames = [] }) => {
-    const clickSound = React.useRef(new Audio('https://www.myinstants.com/media/sounds/button-press.mp3'));
-
+const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSearching, openGames = [], t }) => {
     const playClick = () => {
-        try {
-            clickSound.current.currentTime = 0;
-            clickSound.current.volume = 0.5;
-            clickSound.current.play().catch(e => console.warn(e));
-        } catch (e) {}
+        SoundManager.playSfx('click');
     };
 
     return (
@@ -517,10 +490,10 @@ const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSe
         <Card className="mb-6 border-purple-500 bg-purple-900/10">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Swords className="text-purple-400" /> Configurar Partida
+                    <Swords className="text-purple-400" /> {t('arcade.setupMatch')}
                 </h3>
                 <div className="text-right">
-                    <p className="text-[10px] text-gray-400">SEU SALDO</p>
+                    <p className="text-[10px] text-gray-400">{t('arcade.yourBalance')}</p>
                     <p className={`font-mono font-bold ${userBalance < pvpConfig.bet ? 'text-red-400' : 'text-green-400'}`}>
                         {(userBalance || 0).toFixed(2)} MPH
                     </p>
@@ -528,9 +501,9 @@ const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSe
             </div>
             
             <div className="mb-6">
-                <label className="text-xs text-gray-400 block mb-2">ESCOLHA SEU PERSONAGEM</label>
+                <label className="text-xs text-gray-400 block mb-2">{t('arcade.chooseChar')}</label>
                 <div className="grid grid-cols-4 gap-3">
-                    {['mp_p1', 'mp_p2', 'mp_p3', 'mp_p4', 'mp_p5', 'mp_p6'].map(char => (
+                    {['mp_p1', 'mp_p2', 'mp_p3', 'mp_p4', 'mp_p5', 'mp_p6', 'mp_p7', 'mp_p8'].map(char => (
                         <button 
                             key={char}
                             onClick={() => { playClick(); setPvpConfig({...pvpConfig, char}); }}
@@ -544,7 +517,7 @@ const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSe
             </div>
 
             <div className="mb-6">
-                <label className="text-xs text-gray-400 block mb-2">VALOR DA APOSTA (MPH)</label>
+                <label className="text-xs text-gray-400 block mb-2">{t('arcade.betAmount')}</label>
                 <div className="grid grid-cols-3 gap-3">
                     {[100, 500, 1000].map(amt => (
                         <button
@@ -556,7 +529,7 @@ const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSe
                         </button>
                     ))}
                 </div>
-                <p className="text-[10px] text-gray-500 mt-2 text-center">Taxa do Sistema: 10% por jogador. Vencedor leva 180%.</p>
+                <p className="text-[10px] text-gray-500 mt-2 text-center">{t('arcade.systemFee')}</p>
             </div>
 
             <Button 
@@ -564,14 +537,14 @@ const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSe
                 disabled={isSearching}
                 className={`w-full py-4 text-lg font-black bg-gradient-to-r from-purple-600 to-pink-600 border-0 shadow-lg hover:scale-[1.02] transition-transform ${isSearching ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-                {isSearching ? 'CRIANDO...' : 'CRIAR SALA DE APOSTA'}
+                {isSearching ? t('arcade.creating') : t('arcade.createRoom')}
             </Button>
         </Card>
 
         {/* SESSÃO 2: BOOK DE OFERTAS (Batalhas Disponíveis) */}
         <div className="mb-6">
             <h3 className="text-white font-bold mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
-                <Users size={16} className="text-blue-400"/> Batalhas Disponíveis
+                <Users size={16} className="text-blue-400"/> {t('arcade.availableBattles')}
             </h3>
             
             <div className="space-y-3">
@@ -583,7 +556,7 @@ const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSe
                             </div>
                             <div>
                                 <p className="text-xs font-bold text-white">{game.player}</p>
-                                <p className="text-[10px] text-green-400 font-mono">Aposta: {game.bet} MPH</p>
+                                <p className="text-[10px] text-green-400 font-mono">{t('arcade.betLabel')} {game.bet} MPH</p>
                             </div>
                         </div>
                         <Button 
@@ -592,14 +565,14 @@ const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSe
                             className="bg-blue-600 hover:bg-blue-500 text-xs px-4"
                             disabled={userBalance < game.bet}
                         >
-                            DESAFIAR
+                            {t('arcade.challenge')}
                         </Button>
                     </div>
                 ))}
                 
                 {openGames.length === 0 && (
                     <p className="text-gray-500 text-xs text-center py-4 border border-dashed border-gray-700 rounded-lg">
-                        Nenhuma sala aberta no momento. Crie a sua!
+                        {t('arcade.noBattles')}
                     </p>
                 )}
             </div>
@@ -608,12 +581,12 @@ const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSe
         <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-900 p-4 rounded-xl border border-gray-800 text-center">
                 <Trophy className="mx-auto text-yellow-500 mb-2" />
-                <p className="text-xs text-gray-400">Total Pago</p>
+                <p className="text-xs text-gray-400">{t('arcade.totalPaid')}</p>
                 <p className="text-lg font-bold text-white">1.2M MPH</p>
             </div>
             <div className="bg-gray-900 p-4 rounded-xl border border-gray-800 text-center">
                 <Users className="mx-auto text-blue-500 mb-2" />
-                <p className="text-xs text-gray-400">Online</p>
+                <p className="text-xs text-gray-400">{t('arcade.online')}</p>
                 <p className="text-lg font-bold text-white">428</p>
             </div>
         </div>
@@ -621,7 +594,7 @@ const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSe
     );
 };
 
-const PvpResult = ({ pvpResult, onLobby, onRematch }) => {
+const PvpResult = ({ pvpResult, onLobby, onRematch, t }) => {
     React.useEffect(() => {
         // Auto-scroll to top when result screen appears
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -636,20 +609,20 @@ const PvpResult = ({ pvpResult, onLobby, onRematch }) => {
         </div>
         
         <h2 className="text-3xl font-black text-white mb-2">
-            {pvpResult.outcome === 'win' ? 'VITÓRIA!' : pvpResult.outcome === 'loss' ? 'DERROTA' : 'EMPATE'}
+            {pvpResult.outcome === 'win' ? t('arcade.victory') : pvpResult.outcome === 'loss' ? t('arcade.defeat') : t('arcade.draw')}
         </h2>
         
         <p className="text-gray-400 mb-6">
-            {pvpResult.outcome === 'win' ? 'A colheita foi lendária!' : 'Tente novamente!'}
+            {pvpResult.outcome === 'win' ? t('arcade.victoryDesc') : t('arcade.tryAgain')}
         </p>
 
         <div className="bg-gray-900 rounded-xl p-4 mb-6 max-w-xs mx-auto border border-gray-800">
             <div className="flex justify-between mb-2">
-                <span className="text-xs text-gray-400">Placar Final</span>
+                <span className="text-xs text-gray-400">{t('arcade.finalScore')}</span>
                 <span className="text-xs font-bold text-white">{pvpResult.score.player} x {pvpResult.score.bot}</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-gray-800">
-                <span className="text-xs text-gray-400">Prêmio Recebido</span>
+                <span className="text-xs text-gray-400">{t('arcade.prizeReceived')}</span>
                 <span className={`text-xl font-mono font-bold ${pvpResult.prize > 0 ? 'text-green-400' : 'text-gray-500'}`}>
                     +{pvpResult.prize.toFixed(0)} MPH
                 </span>
@@ -657,8 +630,8 @@ const PvpResult = ({ pvpResult, onLobby, onRematch }) => {
         </div>
 
         <div className="flex gap-3">
-            <Button onClick={onLobby} variant="secondary" className="flex-1">LOBBY</Button>
-            <Button onClick={onRematch} className="flex-1">REVANCHE</Button>
+            <Button onClick={onLobby} variant="secondary" className="flex-1">{t('arcade.lobby')}</Button>
+            <Button onClick={onRematch} className="flex-1">{t('arcade.rematch')}</Button>
         </div>
     </div>
     );
