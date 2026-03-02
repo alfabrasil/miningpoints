@@ -60,7 +60,7 @@ export default {
     playNow: "立即开始",
     noCreditsTitle: "今日次数已用完",
     noCreditsText: "您已经使用完今日 3 次免费机会。请明天再来或购买更多次数。",
-    buyCredits: "购买 5 次（500 MPH）",
+    buyCredits: "购买 5 次（50 MPH）",
     comeBack: "明天再来",
     runnerTitle: "Cyber Runner",
     runnerDesc: "躲避障碍并收集金币。",

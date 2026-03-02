@@ -60,7 +60,7 @@ export default {
     playNow: "JOUER MAINTENANT",
     noCreditsTitle: "Aucun crédit quotidien",
     noCreditsText: "Vous avez utilisé vos 3 crédits gratuits aujourd'hui. Revenez demain ou achetez-en plus.",
-    buyCredits: "Acheter 5 crédits (500 MPH)",
+    buyCredits: "Acheter 5 crédits (50 MPH)",
     comeBack: "Revenir demain",
     runnerTitle: "Cyber Runner",
     runnerDesc: "Évitez les obstacles et collectez des pièces.",

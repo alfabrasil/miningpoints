@@ -6,13 +6,14 @@ import { Card } from '../components/ui/Card';
 import { CyberRunnerGame } from '../components/games/CyberRunner';
 import { CryptoCatcherGame } from '../components/games/CryptoCatcher';
 import { HashHarvestGame } from '../components/games/HashHarvest';
+import { TwelveDoorsGame } from '../components/games/TwelveDoorsGame';
 import { SoundManager } from '../utils/soundManager';
 
 export const ArcadeView = () => {
     const [tab, setTab] = useState('daily'); // 'daily', 'pvp'
     const [game, setGame] = useState(null); // 'runner', 'catcher'
     const [pvpState, setPvpState] = useState('lobby'); // 'lobby', 'waiting_room', 'playing', 'result'
-    const [pvpConfig, setPvpConfig] = useState({ bet: 100, char: 'mp_p1' });
+    const [pvpConfig, setPvpConfig] = useState({ bet: 100, char: 'mp_p1', gameType: 'twelve_doors' }); // gameType: 'hash_harvest', 'twelve_doors'
     const [pvpResult, setPvpResult] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
     const [waitingTimer, setWaitingTimer] = useState(0); // Timer for waiting room
@@ -86,10 +87,10 @@ export const ArcadeView = () => {
     };
 
     const closeCatcher = (finalScore) => {
-        const earnedMPH = finalScore / 5; // Scoring ratio for Catcher
+        const earnedMPH = finalScore / 100; // Scoring ratio for Catcher
         if (earnedMPH > 0) {
             addGameResult('Crypto Catcher', earnedMPH);
-            addNotification(`Catcher finalizado: +${earnedMPH.toFixed(1)} MPH`, 'success');
+            addNotification(`Catcher finalizado: +${earnedMPH.toFixed(2)} MPH`, 'success');
         }
         setGame(null);
     };
@@ -160,7 +161,6 @@ export const ArcadeView = () => {
                 
                 // Simula entrada de oponente aleatoriamente
                 if (Math.random() > 0.95) { 
-                    addNotification(t('arcade.opponentFound'), 'success');
                     // Remove do book ao iniciar
                     if (pvpConfig.gameId) {
                         setOpenGames(prev => prev.filter(g => g.id !== pvpConfig.gameId));
@@ -226,12 +226,15 @@ export const ArcadeView = () => {
             // Vitória ou Empate:
             // Histórico: Lucro (Prêmio - Aposta)
             // Carteira: Recebe o Prêmio (já que a aposta foi descontada no início)
-            addGameResult('PvP Arena', prize - pvpConfig.bet, prize); 
+            const profit = prize - pvpConfig.bet;
+            addGameResult('PvP Arena', profit, prize); 
+            addNotification(`PvP Arena: ${outcome === 'win' ? t('arcade.victory') : t('arcade.draw')} (+${profit.toFixed(2)} MPH)`, 'success');
         } else {
             // Derrota:
             // Histórico: Prejuízo (-Aposta)
             // Carteira: 0 (não desconta novamente, pois já foi descontado no início)
             addGameResult('PvP Arena', -pvpConfig.bet, 0);
+            addNotification(`PvP Arena: ${t('arcade.defeat')} (-${pvpConfig.bet.toFixed(2)} MPH)`, 'danger');
         }
 
         setPvpResult({ outcome, prize, score: finalScore });
@@ -268,8 +271,8 @@ export const ArcadeView = () => {
                     <Swords size={14} /> {t('arcade.pvpArena')}
                 </button>
             </div>
-            
-            {/* Botão de Mute Flutuante */}
+            {/* Botão de Mute Flutuante (Apenas para Daily Games) */}
+            {tab === 'daily' && (
                 <Button 
                     onClick={toggleMute}
                     className="absolute top-24 right-4 z-50 bg-black/50 hover:bg-black/70 p-2 rounded-full border border-gray-600"
@@ -277,10 +280,12 @@ export const ArcadeView = () => {
                 >
                     {isMuted ? <VolumeX size={16} className="text-red-400" /> : <Volume2 size={16} className="text-green-400" />}
                 </Button>
+            )}
 
                 {/* Conteúdo das Abas */}
             {tab === 'daily' && (
                 <>
+
                     {/* Renderização Condicional do Jogo Real */}
                     {game === 'runner_wrapper' && (
                         <div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -302,9 +307,12 @@ export const ArcadeView = () => {
                         </div>
                     )}
 
-                    <div className="text-center mb-6">
+                    <div className="text-center mb-6 flex justify-center gap-3">
                         <div className="inline-block bg-gray-800 px-3 py-1 rounded-full text-xs border border-green-500 text-green-400">
                             {t('arcade.dailyCreditsLabel')} {state.user.dailyCredits}/3
+                        </div>
+                        <div className="inline-block bg-gray-800 px-3 py-1 rounded-full text-xs border border-purple-500 text-purple-400 font-mono">
+                            {state.wallet.mph.toFixed(2)} MPH
                         </div>
                     </div>
 
@@ -360,6 +368,8 @@ export const ArcadeView = () => {
                             userBalance={state.wallet?.mph || 0}
                             isSearching={isSearching}
                             openGames={openGames}
+                            isMuted={isMuted}
+                            toggleMute={toggleMute}
                             t={t}
                         />
                     )}
@@ -405,13 +415,23 @@ export const ArcadeView = () => {
                         <div className="fixed inset-0 z-50 bg-black flex flex-col p-4">
                             <Button onClick={() => { if(window.confirm(t('arcade.exitConfirm'))) setPvpState('lobby'); }} className="absolute top-4 right-4 z-50 bg-red-600/80 p-2 rounded-full w-auto h-auto"><X size={20}/></Button>
                             <div className="flex-1 flex items-center justify-center">
-                                <HashHarvestGame 
-                                    onGameOver={handlePvpGameOver}
-                                    betAmount={pvpConfig.bet}
-                                    playerChar={pvpConfig.char}
-                                    botChar={openGames.find(g => g.id !== pvpConfig.gameId)?.avatar || 'mp_p6'}
-                                    isMuted={isMuted}
-                                />
+                                {pvpConfig.gameType === 'hash_harvest' ? (
+                                    <HashHarvestGame 
+                                        onGameOver={handlePvpGameOver}
+                                        betAmount={pvpConfig.bet}
+                                        playerChar={pvpConfig.char}
+                                        botChar={openGames.find(g => g.id !== pvpConfig.gameId)?.avatar || 'mp_p6'}
+                                        isMuted={isMuted}
+                                    />
+                                ) : (
+                                    <TwelveDoorsGame 
+                                        onGameOver={handlePvpGameOver}
+                                        betAmount={pvpConfig.bet}
+                                        playerChar={pvpConfig.char}
+                                        botChar={openGames.find(g => g.id !== pvpConfig.gameId)?.avatar || 'mp_p6'}
+                                        isMuted={isMuted}
+                                    />
+                                )}
                             </div>
                         </div>
                     )}
@@ -436,7 +456,7 @@ export const ArcadeView = () => {
                         <p className="text-gray-400 text-sm mb-6">{t('arcade.noCreditsText')}</p>
                         <div className="space-y-3">
                             <Button onClick={() => { 
-                                if(buyCredits(5, 500)) setShowCreditModal(false); // 5 créditos por 500 MPH
+                                if(buyCredits(5, 50)) setShowCreditModal(false); // 5 créditos por 50 MPH
                             }} variant="success" className="w-full text-xs">
                                 {t('arcade.buyCredits')}
                             </Button>
@@ -479,7 +499,7 @@ export const ArcadeView = () => {
     );
 };
 
-const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSearching, openGames = [], t }) => {
+const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSearching, openGames = [], t, isMuted, toggleMute }) => {
     const playClick = () => {
         SoundManager.playSfx('click');
     };
@@ -492,14 +512,43 @@ const PvpLobby = ({ pvpConfig, setPvpConfig, onCreate, onJoin, userBalance, isSe
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
                     <Swords className="text-purple-400" /> {t('arcade.setupMatch')}
                 </h3>
-                <div className="text-right">
-                    <p className="text-[10px] text-gray-400">{t('arcade.yourBalance')}</p>
-                    <p className={`font-mono font-bold ${userBalance < pvpConfig.bet ? 'text-red-400' : 'text-green-400'}`}>
-                        {(userBalance || 0).toFixed(2)} MPH
-                    </p>
+                <div className="flex items-center gap-4">
+                    <Button 
+                        onClick={toggleMute}
+                        className="bg-black/50 hover:bg-black/70 p-2 rounded-full border border-gray-600"
+                        size="sm"
+                    >
+                        {isMuted ? <VolumeX size={16} className="text-red-400" /> : <Volume2 size={16} className="text-green-400" />}
+                    </Button>
+                    <div className="text-right">
+                        <p className="text-[10px] text-gray-400">{t('arcade.yourBalance')}</p>
+                        <p className={`font-mono font-bold ${userBalance < pvpConfig.bet ? 'text-red-400' : 'text-green-400'}`}>
+                            {(userBalance || 0).toFixed(2)} MPH
+                        </p>
+                    </div>
                 </div>
             </div>
             
+            <div className="mb-6">
+                <label className="text-xs text-gray-400 block mb-2">{t('arcade.chooseGame') || 'Choose Game'}</label>
+                <div className="grid grid-cols-2 gap-3">
+                    <button 
+                        onClick={() => { playClick(); setPvpConfig({...pvpConfig, gameType: 'twelve_doors'}); }}
+                        className={`p-3 rounded-lg border flex flex-col items-center justify-center transition-all ${pvpConfig.gameType !== 'hash_harvest' ? 'bg-purple-900/50 border-purple-500 text-white shadow-[0_0_10px_#a855f7]' : 'bg-gray-900 border-gray-700 text-gray-400'}`}
+                    >
+                        <span className="text-xl mb-1">🚪</span>
+                        <span className="text-xs font-bold">12 Doors</span>
+                    </button>
+                    <button 
+                        onClick={() => { playClick(); setPvpConfig({...pvpConfig, gameType: 'hash_harvest'}); }}
+                        className={`p-3 rounded-lg border flex flex-col items-center justify-center transition-all ${pvpConfig.gameType === 'hash_harvest' ? 'bg-purple-900/50 border-purple-500 text-white shadow-[0_0_10px_#a855f7]' : 'bg-gray-900 border-gray-700 text-gray-400'}`}
+                    >
+                        <span className="text-xl mb-1">⚔️</span>
+                        <span className="text-xs font-bold">Hash Harvest</span>
+                    </button>
+                </div>
+            </div>
+
             <div className="mb-6">
                 <label className="text-xs text-gray-400 block mb-2">{t('arcade.chooseChar')}</label>
                 <div className="grid grid-cols-4 gap-3">

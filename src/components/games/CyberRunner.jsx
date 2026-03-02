@@ -10,10 +10,11 @@ export const CyberRunnerGame = ({ onGameOver, onExit }) => {
     const [gameState, setGameState] = useState('start'); // start, playing, gameover
     const [audioEnabled, setAudioEnabled] = useState(true);
     const requestRef = useRef();
+    const playerRef = useRef(null); // Ref para o elemento DOM do jogador (GIF)
     
     // Game Physics & State Refs (to avoid closure staleness)
     const gameData = useRef({
-        player: { x: 50, y: 0, w: 30, h: 30, dy: 0, grounded: false, color: '#39ff14' },
+        player: { x: 50, y: 0, w: 60, h: 60, dy: 0, grounded: false, color: '#39ff14' },
         obstacles: [],
         coins: [],
         traps: [], // Moedas vermelhas falsas (!)
@@ -33,8 +34,8 @@ export const CyberRunnerGame = ({ onGameOver, onExit }) => {
         const resizeCanvas = () => {
             canvas.width = canvas.parentElement.clientWidth;
             const parentH = canvas.parentElement.clientHeight;
-            canvas.height = Math.max(300, Math.floor(parentH * 0.7));
-            gameData.current.player.y = canvas.height - 50; // Reset player pos
+            canvas.height = parentH; // Usar altura total do pai para resolução 1:1 e evitar distorção/flutuação do GIF
+            gameData.current.player.y = canvas.height - 100; // Reset player pos
         };
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
@@ -93,9 +94,11 @@ export const CyberRunnerGame = ({ onGameOver, onExit }) => {
         state.player.y += state.player.dy;
 
         // Ground Collision
-        const groundLevel = canvas.height - 40;
+        // Lógica de física padrão e robusta: O pé da hitbox toca exatamente a linha do chão.
+        const groundLevel = canvas.height - 40; 
+        
         if (state.player.y + state.player.h > groundLevel) {
-            state.player.y = groundLevel - state.player.h;
+            state.player.y = groundLevel - state.player.h; // Colisão exata
             state.player.dy = 0;
             state.player.grounded = true;
         } else {
@@ -154,12 +157,23 @@ export const CyberRunnerGame = ({ onGameOver, onExit }) => {
 
         // --- UPDATE & DRAW ENTITIES ---
         
-        // Player
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = state.player.color;
-        ctx.fillStyle = state.player.color;
-        ctx.fillRect(state.player.x, state.player.y, state.player.w, state.player.h);
-        ctx.shadowBlur = 0;
+        // Player (Agora via DOM Overlay)
+        // ctx.shadowBlur = 15;
+        // ctx.shadowColor = state.player.color;
+        // ctx.fillStyle = state.player.color;
+        // ctx.fillRect(state.player.x, state.player.y, state.player.w, state.player.h);
+        // ctx.shadowBlur = 0;
+
+        // Atualizar posição do GIF
+        // Com a resolução do canvas corrigida para 1:1 com o DOM, o offset visual deve ser mínimo.
+        const visualOffsetY = 4; 
+        
+        if (playerRef.current) {
+            playerRef.current.style.transform = `translate(${state.player.x}px, ${state.player.y + visualOffsetY}px)`;
+            playerRef.current.style.width = `${state.player.w}px`;
+            playerRef.current.style.height = `${state.player.h}px`;
+            playerRef.current.style.display = 'block';
+        }
 
         // Obstacles
         state.obstacles.forEach((obs, index) => {
@@ -268,7 +282,7 @@ export const CyberRunnerGame = ({ onGameOver, onExit }) => {
         
         setGameState('playing');
         gameData.current = {
-            player: { x: 50, y: 0, w: 30, h: 30, dy: 0, grounded: false, color: '#39ff14' },
+            player: { x: 50, y: 0, w: 60, h: 60, dy: 0, grounded: false, color: '#39ff14' },
             obstacles: [],
             coins: [],
             traps: [],
@@ -348,11 +362,20 @@ export const CyberRunnerGame = ({ onGameOver, onExit }) => {
                 </div>
 
                 <div 
-                    className="w-full h-[70vh] max-h-[640px] min-h-[420px] relative cursor-pointer" 
+                    className="w-full h-[70vh] max-h-[640px] min-h-[420px] relative cursor-pointer overflow-hidden" 
                     onClick={handleJump} 
                     onTouchStart={handleJump}
                 >
                     <canvas ref={canvasRef} className="w-full h-full block bg-[#0a0a0a]" />
+
+                    {/* Player GIF Overlay */}
+                    <img 
+                        ref={playerRef}
+                        src="/assets/mp/mp_loop.gif" 
+                        alt="Player"
+                        className="absolute top-0 left-0 pointer-events-none"
+                        style={{ display: 'none', width: '60px', height: '60px', objectFit: 'contain' }} 
+                    />
                     
                     {gameState === 'start' && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm text-center p-6">

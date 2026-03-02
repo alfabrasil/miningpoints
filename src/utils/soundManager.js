@@ -55,6 +55,10 @@ export const SoundManager = {
         setTimeout(() => SoundManager.playTone(1800, 'sine', 0.1, 0.05), 50);
     },
 
+    playGameOver: () => {
+        SoundManager.playSfx('defeat');
+    },
+
     // Sintetizador de Derrota (Game Over)
     playSynthGameOver: () => {
         SoundManager.playTone(300, 'sawtooth', 0.3, 0.2, 0);
@@ -184,7 +188,7 @@ export const SoundManager = {
             const src = SoundManager.assets[type];
             audio = new Audio(src);
             audio.loop = true;
-            audio.volume = 0.2;
+            audio.volume = 0.5;
             SoundManager.audioCache[type] = audio;
 
             audio.onerror = () => {

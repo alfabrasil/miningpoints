@@ -315,7 +315,7 @@ export const CryptoCatcherGame = ({ onGameOver, onExit }) => {
                             <div className="flex flex-col gap-2 mb-6">
                                 <span className="text-gray-400 text-sm">Pontuação Final: <b className="text-white">{score}</b></span>
                                 <span className="text-green-400 text-lg font-bold border border-green-500 px-4 py-2 rounded bg-green-900/20">
-                                    +{(score / 5).toFixed(1)} MPH
+                                    +{(score / 100).toFixed(2)} MPH
                                 </span>
                             </div>
                             <div className="flex gap-4">

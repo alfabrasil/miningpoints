@@ -60,7 +60,7 @@ export default {
     playNow: "ИГРАТЬ СЕЙЧАС",
     noCreditsTitle: "Нет ежедневных кредитов",
     noCreditsText: "Вы использовали все 3 бесплатных кредита на сегодня. Возвращайтесь завтра или купите ещё.",
-    buyCredits: "Купить 5 кредитов (500 MPH)",
+    buyCredits: "Купить 5 кредитов (50 MPH)",
     comeBack: "Вернуться завтра",
     runnerTitle: "Cyber Runner",
     runnerDesc: "Избегайте препятствий и собирайте монеты.",
